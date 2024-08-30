@@ -66,7 +66,7 @@ State_odd
 	
 	;turn_off
 	BIC R1, R1, #0x10  ; Set PE4 low
-       STR R1, [R0]    ; Store back to data register
+        STR R1, [R0]    ; Store back to data register
 	B   loop
 	
 turn_on
