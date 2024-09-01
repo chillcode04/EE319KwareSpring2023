@@ -52,7 +52,7 @@ loop
 	MOV R3, #4
 R3_LSR
 	AND R4, R5, R3
-	TST R4, R4
+	CMP R4, #0
 	ADDNE R2, R2, #1
 	LSR R3, R3, #1
 	CMP R3, #0
