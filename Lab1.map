@@ -23,8 +23,7 @@ GPIO_PORTE_ICR_R  EQU 0x4002441C
 GPIO_PORTE_MIS_R  EQU 0x40024418	
 GPIO_PORTE_IM_R   EQU 0x40024410
 NVIC_EN0_R        EQU 0xE000E100
-NVIC_PRI4_R   	  EQU 0xE000E410	
-
+NVIC_PRI4_R   	  EQU 0xE000E410		
        PRESERVE8 
        AREA   Data, ALIGN=2
 ; Declare global variables here if needed
@@ -41,7 +40,7 @@ RunGrader DCD 0 ; change to nonzero when ready for grading
       EXPORT  Lab1
 
 Lab1
-; Initialize PE4 as a digital output, PF1 digital input pins
+; Initialize PE4 as a digital output, PE1 digital input pins
    LDR R0,=SYSCTL_RCGCGPIO_R
    LDR R1,[R0]     ;previous
    ORR R1,R1,#0x10 ;bit 4 is clock for E
@@ -50,17 +49,17 @@ Lab1
    NOP ;wait  
 
    LDR R0,=GPIO_PORTE_DIR_R
-   MOV R1,#0x10 ;PE4 output, PE0,PE1,PE2 input
+   MOV R1,#0x10 ;PE4 output, PE1 input
    STR R1,[R0]
    LDR R0,=GPIO_PORTE_DEN_R
-   MOV R1,#0x17 ;enable PE1,PE0,PE2,PE4
+   MOV R1,#0x12 ;enable PE1, PE4
    STR R1,[R0]
    LDR  R0,=GPIO_PORTE_DATA_R
    
 ; Enable edge sensitive on PE1
 	LDR R0,=GPIO_PORTE_IS_R
 	LDR R1,[R0]
-	MOV R2, #(1 << 1) ; 0000 0010
+	MOV R2, #0x02 ; 0000 0010
 	MVN R2,R2 		  ; 1111 1101
 	AND R1,R1,R2      ; set bit 1 equal 0
 	STR R1,[R0]
@@ -68,7 +67,7 @@ Lab1
 ; Trigger is controlled by IEV
 	LDR R0,=GPIO_PORTE_IBE_R
 	LDR R1,[R0]
-	MOV R2, #(1 << 1) ; 0000 0010
+	MOV R2, #0x02 ; 0000 0010
 	MVN R2,R2 		  ; 1111 1101
 	AND R1,R1,R2      ; set bit 1 equal 0
 	STR R1,[R0]	
@@ -76,33 +75,34 @@ Lab1
 ; Rising edge trigger
 	LDR R0,=GPIO_PORTE_IEV_R
 	LDR R1,[R0]
-	MOV R2, #(1 << 1) ; 0000 0010
+	MOV R2, #0x02 ; 0000 0010
 	ORR R1,R1,R2      ; set bit 1 equal 1
 	STR R1,[R0]	
 
 ; Clear any prior interrupt
 	LDR R0,=GPIO_PORTE_ICR_R
 	LDR R1,[R0]
-	MOV R2, #(1 << 1) ; 0000 0010
+	MOV R2, #0x02 ; 0000 0010
 	ORR R1,R1,R2      ; set bit 1 equal 1
 	STR R1,[R0]	
 	
 ; Unmask interrupt
 	LDR R0,=GPIO_PORTE_IM_R
 	LDR R1,[R0]
-	MOV R2, #(1 << 1) ; 0000 0010
+	MOV R2, #0x02 ; 0000 0010
 	ORR R1,R1,R2      ; set bit 1 equal 1
 	STR R1,[R0]
 
 ;  Set interrupt priority to 3
 	LDR R0,=NVIC_PRI4_R
-	MOV R1,#(3 << 5) ;1100 0000
+	MOV R1, #0x03    ; 0011
+	LSL R1, R1, #5; 1100 0000
 	STR R1,[R0]
 	
 ; Enable IRQ4 (corresponding to PORTE in NVIC)
 	LDR R0,=NVIC_EN0_R
 	LDR R1,[R0]
-	MOV R2,#(1 << 4) ; 0000 1000
+	MOV R2,#0x04 ; 0000 1000
 	ORR R1,R1,R2     ; set bit 4 equal 1
 	STR R1,[R0]
 	
@@ -115,27 +115,17 @@ GPIOPortE_Handler
 	LDR R7,=GPIO_PORTE_MIS_R
 	LDR R8,[R7]
 	CMP R8,#0x02  ;Check if interrupt was caused by PE1
-	BEQ Update_R10
+	BNE EndHandler
 	
-	;clear the interrupt flag 
-	LDR R2,=GPIO_PORTE_ICR_R
-	LDR R3,[R2]
-	MOV R4, #(1 << 1) ; 0000 0010
-	ORR R3,R3,R4      ; set bit 1 equal 1
-	STR R3,[R2]
-
-    BX LR
-
-Update_R10
 	ADD R10,#1
-	
 	;clear the interrupt flag 
 	LDR R2,=GPIO_PORTE_ICR_R
 	LDR R3,[R2]
-	MOV R4, #(1 << 1) ; 0000 0010
+	MOV R4, #0x02 ; 0000 0010
 	ORR R3,R3,R4      ; set bit 1 equal 1
 	STR R3,[R2]
 
+EndHandler
 	BX LR
 	
     ALIGN        ; make sure the end of this section is aligned
